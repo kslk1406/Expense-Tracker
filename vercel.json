@@ -1,5 +1,13 @@
 {
   "rewrites": [
     { "source": "/", "destination": "/tracker.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(index.html|tracker.html|sw.js)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    }
   ]
 }
