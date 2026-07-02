@@ -207,7 +207,12 @@ var expenses = [];
 var income = [];
 var summaryDate = new Date();
 var formMode = 'expense';
-var CATEGORIES = ['Savings', 'Amma', 'Kumari', 'Nanna', 'Sai'];
+var CATEGORIES = [
+  'Food & Dining', 'Transport', 'Shopping', 'Bills & Utilities',
+  'Entertainment', 'Health', 'Education',
+  'Savings', 'Amma', 'Kumari', 'Nanna', 'Sai',
+  'Other'
+];
 
 function populateCategorySelects() {
   var opts = '<option value="">Select category</option>';
