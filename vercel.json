@@ -4,7 +4,7 @@
   ],
   "headers": [
     {
-      "source": "/(index.html|tracker.html|update.html|sw.js|sw-v3.js)",
+      "source": "/(index.html|tracker.html|update.html|sw-v3.js)",
       "headers": [
         { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
       ]
