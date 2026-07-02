@@ -776,7 +776,16 @@ function init() {
   try { genRecurring(); } catch(e) { console.error('recurring error', e); }
   setupMobile();
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(function() {});
+    navigator.serviceWorker.register('sw.js').then(function(reg) {
+      reg.update();
+      if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }).catch(function() {});
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+      if (!window._swReloaded) {
+        window._swReloaded = true;
+        window.location.reload();
+      }
+    });
   }
   } catch(e) { console.error('init error', e); }
 }
