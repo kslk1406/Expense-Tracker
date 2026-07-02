@@ -1,4 +1,4 @@
-var CACHE = 'expense-tracker-v3';
+var CACHE = 'expense-tracker-v5';
 var ASSETS = ['/', '/index.html', '/manifest.json', '/icon.svg'];
 
 function isHtmlRequest(request) {

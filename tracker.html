@@ -16,7 +16,10 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--tx);min-height:100vh;min-height:100dvh;padding-bottom:calc(2rem + env(safe-area-inset-bottom));padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
 .ctn{max-width:480px;margin:0 auto;padding:1rem}
 header{text-align:center;margin-bottom:1rem}
+header.hdr{display:flex;align-items:center;justify-content:center;position:relative}
 header h1{font-size:1.5rem;color:var(--p)}
+.refresh-btn{position:absolute;right:0;background:var(--card);border:1.5px solid var(--bd);border-radius:8px;width:40px;height:40px;font-size:1.2rem;line-height:1;color:var(--mt);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.refresh-btn:active{background:var(--bg);color:var(--p)}
 header p{color:var(--mt);font-size:.9rem;margin-top:.25rem}
 .tabs{display:flex;gap:.25rem;background:var(--card);border-radius:12px;padding:.25rem;margin-bottom:1rem;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .tab{flex:1;padding:.75rem .5rem;border:none;background:0 0;border-radius:10px;font-size:.85rem;font-weight:500;color:var(--mt);cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;min-height:44px}
@@ -98,7 +101,6 @@ header p{color:var(--mt);font-size:.9rem;margin-top:.25rem}
 .ovc.spent .ov{color:var(--dg)}
 .ovc.left .ov{color:var(--p)}
 .ovc.balance .ov{color:var(--p)}
-.hbal{font-size:1.1rem;font-weight:700;color:var(--p);margin-top:.35rem}
 .balance-box{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;border-radius:12px;padding:1rem;margin-bottom:1rem;text-align:center}
 .balance-box label{display:block;font-size:.75rem;opacity:.9;margin-bottom:.35rem}
 .balance-box input{width:100%;padding:.6rem;border:none;border-radius:8px;font-size:1.1rem;font-weight:700;text-align:center;color:var(--tx)}
@@ -132,7 +134,7 @@ header p{color:var(--mt);font-size:.9rem;margin-top:.25rem}
 </head>
 <body>
 <div class="ctn">
-<header><h1>Expense Tracker</h1><p id="currentMonth"></p><p id="headerBalance" class="hbal"></p></header>
+<header class="hdr"><h1>Expense Tracker</h1><button type="button" id="hardRefresh" class="refresh-btn" title="Hard refresh" aria-label="Hard refresh">↻</button></header>
 <div id="installTip" class="install-tip">
   <p id="installText"></p>
   <button type="button" id="dismissInstall">Got it</button>
@@ -159,9 +161,9 @@ header p{color:var(--mt);font-size:.9rem;margin-top:.25rem}
   <form id="expenseForm">
     <div class="fg"><label>Date</label><input type="date" id="date" required></div>
     <div class="fg"><label>Amount (₹)</label><input type="number" id="amount" step="0.01" min="0" placeholder="0.00" required></div>
-    <div class="fg exp-only"><label>Category</label><select id="category"><option value="">Select category</option><option>Food &amp; Dining</option><option>Transport</option><option>Shopping</option><option>Bills &amp; Utilities</option><option>Entertainment</option><option>Health</option><option>Education</option><option>Other</option></select></div>
+    <div class="fg exp-only"><label>Category</label><select id="category"><option value="">Select category</option></select></div>
     <div class="fg exp-only"><label>Payment Mode</label><select id="paymentMode"><option value="">Select payment mode</option><option>Cash</option><option>UPI</option><option>Credit Card</option><option>Debit Card</option><option>Net Banking</option><option>Wallet</option></select></div>
-    <div class="fg inc-only"><label>Source</label><input type="text" id="incomeSource" placeholder="e.g. Paycheck, Freelance"></div>
+    <div class="fg inc-only"><label>Category</label><select id="incomeCategory"><option value="">Select category</option></select></div>
     <div class="fg inc-only"><label>Received via</label><select id="incomeMode"><option value="Bank">Bank</option><option value="Cash">Cash</option></select></div>
     <div class="fg exp-only"><label>Note (optional)</label><input type="text" id="note" placeholder="What was this for?"></div>
     <div class="fr exp-only"><label class="cl"><input type="checkbox" id="isRecurring"><span>Recurring</span></label><select id="frequency" disabled><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="yearly">Yearly</option></select></div>
@@ -171,7 +173,7 @@ header p{color:var(--mt);font-size:.9rem;margin-top:.25rem}
 <div id="history" class="tc">
   <div class="frow">
     <select id="filterType"><option value="">All</option><option value="expense">Expenses</option><option value="income">Income</option></select>
-    <select id="filterCategory"><option value="">All Categories</option><option>Food &amp; Dining</option><option>Transport</option><option>Shopping</option><option>Bills &amp; Utilities</option><option>Entertainment</option><option>Health</option><option>Education</option><option>Other</option></select>
+    <select id="filterCategory"><option value="">All Categories</option></select>
     <select id="filterMonth"></select>
   </div>
   <div id="expenseList"></div>
@@ -205,6 +207,19 @@ var expenses = [];
 var income = [];
 var summaryDate = new Date();
 var formMode = 'expense';
+var CATEGORIES = ['Savings', 'Amma', 'Kumari', 'Nanna', 'Sai'];
+
+function populateCategorySelects() {
+  var opts = '<option value="">Select category</option>';
+  var filt = '<option value="">All Categories</option>';
+  for (var i = 0; i < CATEGORIES.length; i++) {
+    opts += '<option>' + CATEGORIES[i] + '</option>';
+    filt += '<option>' + CATEGORIES[i] + '</option>';
+  }
+  document.getElementById('category').innerHTML = opts;
+  document.getElementById('incomeCategory').innerHTML = opts;
+  document.getElementById('filterCategory').innerHTML = filt;
+}
 
 function gA() {
   try { return JSON.parse(localStorage.getItem('expenses') || '[]'); }
@@ -274,27 +289,14 @@ function getTotalBalance() {
 
 function setBankBalance(n) {
   localStorage.setItem('bankBalance', String(n || 0));
-  updateHeaderBalance();
 }
 function setCashBalance(n) {
   localStorage.setItem('cashBalance', String(n || 0));
-  updateHeaderBalance();
 }
 
 function adjustBalance(delta, paymentMode) {
   if (isCashPayment(paymentMode)) setCashBalance(getCashBalance() + delta);
   else setBankBalance(getBankBalance() + delta);
-}
-
-function updateHeaderBalance() {
-  var el = document.getElementById('headerBalance');
-  if (!el) return;
-  var bank = getBankBalance(), cash = getCashBalance(), total = bank + cash;
-  if (!total) {
-    el.textContent = 'Set bank & cash balance in Summary';
-    return;
-  }
-  el.textContent = 'Bank ₹' + fmtNum(bank) + ' · Cash ₹' + fmtNum(cash) + ' · Total ₹' + fmtNum(total);
 }
 
 function updateBalanceTotal() {
@@ -357,6 +359,26 @@ function toast(m) {
   setTimeout(function() { t.classList.remove('show'); }, 2000);
 }
 
+function hardRefresh() {
+  toast('Loading latest version…');
+  var steps = [];
+  if ('serviceWorker' in navigator) {
+    steps.push(navigator.serviceWorker.getRegistrations().then(function(regs) {
+      return Promise.all(regs.map(function(reg) { return reg.unregister(); }));
+    }));
+  }
+  if (window.caches) {
+    steps.push(caches.keys().then(function(keys) {
+      return Promise.all(keys.map(function(key) { return caches.delete(key); }));
+    }));
+  }
+  Promise.all(steps).then(function() {
+    window.location.href = window.location.pathname.split('?')[0] + '?r=' + Date.now();
+  }).catch(function() {
+    window.location.reload();
+  });
+}
+
 function doDelete(id, type) {
   if (!id) return;
   id = String(id);
@@ -397,7 +419,7 @@ function renderHistory() {
   var cat = document.getElementById('filterCategory').value;
   var mv = document.getElementById('filterMonth').value;
   var ft = document.getElementById('filterType').value;
-  document.getElementById('filterCategory').style.display = ft === 'income' ? 'none' : '';
+  document.getElementById('filterCategory').style.display = '';
 
   var filteredExp = expenses.filter(function(e) {
     if (cat && e.category !== cat) return false;
@@ -413,6 +435,8 @@ function renderHistory() {
   });
 
   var filteredInc = income.filter(function(e) {
+    var incCat = e.category || e.source || '';
+    if (cat && incCat !== cat) return false;
     if (mv && mv !== 'all') {
       var d = new Date(e.date);
       return (d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')) === mv;
@@ -460,8 +484,8 @@ function renderHistory() {
     } else {
       var inc = it.data;
       incTotal += inc.amount;
-      html += '<div class="ei"><div class="einf"><div class="ecat">Income</div>';
-      html += '<div class="emeta">' + fmtDate(inc.date) + ' &middot; ' + esc(inc.payment_mode || 'Bank') + (inc.source ? ' &middot; ' + esc(inc.source) : '') + '</div></div>';
+      html += '<div class="ei"><div class="einf"><div class="ecat">' + esc(inc.category || inc.source || 'Income') + '</div>';
+      html += '<div class="emeta">' + fmtDate(inc.date) + ' &middot; ' + esc(inc.payment_mode || 'Bank') + '</div></div>';
       html += '<div class="ert"><div class="eamt inc">+₹' + fmtNum(inc.amount) + '</div>';
       html += '<button type="button" class="edel" data-id="' + esc(inc.id) + '" data-type="income">✕</button></div></div>';
     }
@@ -553,7 +577,6 @@ function syncBalanceInputs() {
   if (bankEl && document.activeElement !== bankEl) bankEl.value = bank || '';
   if (cashEl && document.activeElement !== cashEl) cashEl.value = cash || '';
   updateBalanceTotal();
-  updateHeaderBalance();
 }
 
 function renderSummary() {
@@ -653,13 +676,16 @@ function setFormMode(mode) {
   btn.textContent = mode === 'income' ? 'Add Income' : 'Add Expense';
   document.getElementById('category').required = mode === 'expense';
   document.getElementById('paymentMode').required = mode === 'expense';
+  document.getElementById('incomeCategory').required = mode === 'income';
 }
 
 function init() {
   try {
   document.getElementById('date').valueAsDate = new Date();
-  document.getElementById('currentMonth').textContent = new Date().toLocaleString('default', { month: 'long', year: 'numeric' });
+  populateCategorySelects();
   setFormMode('expense');
+
+  document.getElementById('hardRefresh').addEventListener('click', hardRefresh);
 
   document.querySelectorAll('.tab').forEach(function(tab) {
     tab.addEventListener('click', function() {
@@ -685,9 +711,13 @@ function init() {
     var amount = parseFloat(document.getElementById('amount').value);
     var date = document.getElementById('date').value;
     if (formMode === 'income') {
-      var source = document.getElementById('incomeSource').value.trim() || 'Income';
+      var incCat = document.getElementById('incomeCategory').value;
+      if (!incCat) {
+        toast('Pick a category');
+        return;
+      }
       var incMode = document.getElementById('incomeMode').value;
-      addInc({ date: date, amount: amount, source: source, payment_mode: incMode });
+      addInc({ date: date, amount: amount, category: incCat, payment_mode: incMode });
       adjustBalance(amount, incMode);
       toast('Income added!');
       income = fetchIncome();
