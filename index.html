@@ -137,6 +137,15 @@ header p{color:var(--mt);font-size:.9rem;margin-top:.25rem}
   <p id="installText"></p>
   <button type="button" id="dismissInstall">Got it</button>
 </div>
+<div class="balance-box">
+  <label>Current balances (₹)</label>
+  <div class="balance-grid">
+    <div><label for="bankBalance" style="font-size:.7rem;opacity:.9">Bank</label><input type="number" id="bankBalance" step="0.01" min="0" placeholder="0.00"></div>
+    <div><label for="cashBalance" style="font-size:.7rem;opacity:.9">Cash</label><input type="number" id="cashBalance" step="0.01" min="0" placeholder="0.00"></div>
+  </div>
+  <p id="balanceTotal" class="balance-total"></p>
+  <p class="salary-hint" style="color:rgba(255,255,255,.85);margin:.5rem 0 0">Update when you check your bank or wallet. Cash payments affect cash; everything else affects bank.</p>
+</div>
 <div class="tabs">
   <button class="tab active" data-tab="add">Add</button>
   <button class="tab" data-tab="history">History</button>
@@ -152,7 +161,7 @@ header p{color:var(--mt);font-size:.9rem;margin-top:.25rem}
     <div class="fg"><label>Amount (₹)</label><input type="number" id="amount" step="0.01" min="0" placeholder="0.00" required></div>
     <div class="fg exp-only"><label>Category</label><select id="category"><option value="">Select category</option><option>Food &amp; Dining</option><option>Transport</option><option>Shopping</option><option>Bills &amp; Utilities</option><option>Entertainment</option><option>Health</option><option>Education</option><option>Other</option></select></div>
     <div class="fg exp-only"><label>Payment Mode</label><select id="paymentMode"><option value="">Select payment mode</option><option>Cash</option><option>UPI</option><option>Credit Card</option><option>Debit Card</option><option>Net Banking</option><option>Wallet</option></select></div>
-    <div class="fg inc-only"><label>Source</label><input type="text" id="incomeSource" placeholder="e.g. Salary, Freelance"></div>
+    <div class="fg inc-only"><label>Source</label><input type="text" id="incomeSource" placeholder="e.g. Paycheck, Freelance"></div>
     <div class="fg inc-only"><label>Received via</label><select id="incomeMode"><option value="Bank">Bank</option><option value="Cash">Cash</option></select></div>
     <div class="fg exp-only"><label>Note (optional)</label><input type="text" id="note" placeholder="What was this for?"></div>
     <div class="fr exp-only"><label class="cl"><input type="checkbox" id="isRecurring"><span>Recurring</span></label><select id="frequency" disabled><option value="monthly">Monthly</option><option value="weekly">Weekly</option><option value="yearly">Yearly</option></select></div>
@@ -170,15 +179,6 @@ header p{color:var(--mt);font-size:.9rem;margin-top:.25rem}
 </div>
 <div id="summary" class="tc">
   <div class="smn"><button id="prevMonth" class="nb">&larr;</button><span id="summaryMonthLabel"></span><button id="nextMonth" class="nb">&rarr;</button></div>
-  <div class="balance-box">
-    <label>Current balances (₹)</label>
-    <div class="balance-grid">
-      <div><label for="bankBalance" style="font-size:.7rem;opacity:.9">Bank</label><input type="number" id="bankBalance" step="0.01" min="0" placeholder="0.00"></div>
-      <div><label for="cashBalance" style="font-size:.7rem;opacity:.9">Cash</label><input type="number" id="cashBalance" step="0.01" min="0" placeholder="0.00"></div>
-    </div>
-    <p id="balanceTotal" class="balance-total"></p>
-    <p class="salary-hint" style="color:rgba(255,255,255,.85);margin:.5rem 0 0">Update when you check your bank or wallet. Cash payments affect cash; everything else affects bank.</p>
-  </div>
   <div id="overview" class="ov"></div>
   <div id="summaryCards"></div>
   <div id="summaryTotal" class="tb"></div>
@@ -546,6 +546,16 @@ function genRecurring() {
 
 var COL = ['#4f46e5', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#84cc16'];
 
+function syncBalanceInputs() {
+  var bank = getBankBalance(), cash = getCashBalance();
+  var bankEl = document.getElementById('bankBalance');
+  var cashEl = document.getElementById('cashBalance');
+  if (bankEl && document.activeElement !== bankEl) bankEl.value = bank || '';
+  if (cashEl && document.activeElement !== cashEl) cashEl.value = cash || '';
+  updateBalanceTotal();
+  updateHeaderBalance();
+}
+
 function renderSummary() {
   var yr = summaryDate.getFullYear(), mo = summaryDate.getMonth();
   document.getElementById('summaryMonthLabel').textContent = monthLabel(summaryDate);
@@ -554,11 +564,8 @@ function renderSummary() {
   var bank = getBankBalance(), cash = getCashBalance(), total = getTotalBalance();
   var tot2 = 0;
   for (var m = 0; m < me.length; m++) tot2 += me[m].amount;
-  document.getElementById('bankBalance').value = bank || '';
-  document.getElementById('cashBalance').value = cash || '';
-  updateBalanceTotal();
+  syncBalanceInputs();
   renderOverview(bank, cash, tot2, monthIncome, monthLabel(summaryDate));
-  updateHeaderBalance();
 
   var cm = {};
   for (var i = 0; i < me.length; i++) cm[me[i].category] = (cm[me[i].category] || 0) + me[i].amount;
@@ -678,7 +685,7 @@ function init() {
     var amount = parseFloat(document.getElementById('amount').value);
     var date = document.getElementById('date').value;
     if (formMode === 'income') {
-      var source = document.getElementById('incomeSource').value.trim() || 'Salary';
+      var source = document.getElementById('incomeSource').value.trim() || 'Income';
       var incMode = document.getElementById('incomeMode').value;
       addInc({ date: date, amount: amount, source: source, payment_mode: incMode });
       adjustBalance(amount, incMode);
@@ -730,13 +737,13 @@ function init() {
   var cashInput = document.getElementById('cashBalance');
   balanceInput.addEventListener('change', function() {
     setBankBalance(parseFloat(balanceInput.value) || 0);
-    updateBalanceTotal();
+    syncBalanceInputs();
     renderSummary();
     toast('Bank balance updated');
   });
   cashInput.addEventListener('change', function() {
     setCashBalance(parseFloat(cashInput.value) || 0);
-    updateBalanceTotal();
+    syncBalanceInputs();
     renderSummary();
     toast('Cash balance updated');
   });
@@ -765,7 +772,7 @@ function init() {
   summaryDate = new Date();
   popMonthFilter();
   renderHistory();
-  updateHeaderBalance();
+  syncBalanceInputs();
   try { genRecurring(); } catch(e) { console.error('recurring error', e); }
   setupMobile();
   if ('serviceWorker' in navigator) {

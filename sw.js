@@ -1,4 +1,4 @@
-var CACHE = 'expense-tracker-v1';
+var CACHE = 'expense-tracker-v2';
 var ASSETS = ['/', '/index.html', '/manifest.json', '/icon.svg'];
 
 self.addEventListener('install', function(e) {
